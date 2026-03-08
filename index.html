@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Pulse | 200-Day Team Hub</title>
+    <style>
+        :root {
+            --primary: #6366f1; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+            --bg: #f8fafc; --card: #ffffff; --text: #1e293b;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 20px; transition: 0.5s; }
+        
+        /* Seasonal Themes */
+        body.st-patty { background: #ecfdf5; --primary: #059669; }
+        body.eid { background: #1e1b4b; color: #e2e8f0; --card: #312e81; --text: #f8fafc; }
+
+        .card { width: 100%; max-width: 450px; background: var(--card); border-radius: 24px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); text-align: center; }
+        .track { height: 80px; background: #f1f5f9; border-radius: 40px; position: relative; margin: 25px 0; border: 3px dashed #cbd5e1; overflow: hidden; }
+        #char { position: absolute; left: 0; top: 50%; transform: translateY(-50%); font-size: 40px; transition: left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 2; }
+        .bar { height: 100%; background: linear-gradient(90deg, var(--primary), #818cf8); width: 11.2%; transition: width 0.6s ease; opacity: 0.4; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        button { border: none; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+        .btn-std { background: var(--primary); color: white; }
+        .btn-hvy { background: #4f46e5; color: white; }
+        .btn-adm { background: #e2e8f0; color: #475569; }
+        button:active { transform: translateY(3px); box-shadow: none; }
+
+        #sos-btn { margin-top: 20px; width: 100%; padding: 15px; border-radius: 12px; background: #fee2e2; color: #991b1b; border: 2px solid #fecdd3; }
+        .sos-active { background: #ef4444 !important; color: white !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        
+        .stats-text { font-size: 28px; font-weight: 800; margin: 10px 0; color: var(--primary); }
+    </style>
+</head>
+<body id="page-body">
+
+<div class="card">
+    <h1 id="holiday-msg" style="font-size: 1.2em; margin: 0;">The Pulse Hub</h1>
+    <p id="level-text" style="color: #64748b; font-size: 0.9em;">Level 1: Explorer | 0 XP</p>
+
+    <div class="track">
+        <div id="char">🐕</div>
+        <div class="bar" id="progress-bar"></div>
+    </div>
+
+    <div class="stats-text"><span id="perc">11.2</span>%</div>
+    <p style="font-size: 0.8em; opacity: 0.7;">(Fixed Admin Applied)</p>
+
+    <div class="grid">
+        <button class="btn-std" onclick="add(3.75, 'Standard')">Standard Widget</button>
+        <button class="btn-hvy" onclick="addHeavy()">Heavy Lift (16m)</button>
+        <button class="btn-adm" onclick="addAdmin('IT')">IT Issue</button>
+        <button class="btn-adm" onclick="addAdmin('Assist')">Help a Peer</button>
+    </div>
+
+    <button id="sos-btn" onclick="toggleSOS()">Toggle SOS / Need Help</button>
+    
+    <hr style="margin: 30px 0; opacity: 0.2;">
+    
+    <input type="text" id="user-name" placeholder="Your Name" style="width:90%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
+    <button onclick="submitDay()" style="width: 100%; background: #1e293b; color: white; padding: 15px; border-radius: 12px; font-weight: bold;">Submit & Nominate Hero</button>
+</div>
+
+<script>
+    const GOAL = 375; // 480 - 60 break - 45 fixed admin
+    let state = JSON.parse(localStorage.getItem('pulseData')) || { earned: 45, widgets: 0, heavy: 0, sos: false, xp: 0 };
+    
+    function add(mins, type) {
+        state.earned += mins;
+        if(type === 'Standard') state.widgets++;
+        if(type === 'Heavy') state.heavy++;
+        state.xp += (type === 'Heavy' ? 50 : 10);
+        update();
+    }
+
+    function addHeavy() {
+        const r = prompt("Brief justification for Heavy Lift (16m):");
+        if(r) add(16, 'Heavy');
+    }
+
+    function addAdmin(type) {
+        state.earned += 15;
+        alert(`+15m added for ${type}. Nice!`);
+        update();
+    }
+
+    function toggleSOS() {
+        state.sos = !state.sos;
+        const btn = document.getElementById('sos-btn');
+        btn.classList.toggle('sos-active');
+        btn.innerText = state.sos ? "SOS ACTIVE - PEERS NOTIFIED" : "Toggle SOS / Need Help";
+    }
+
+    function update() {
+        const p = (state.earned / GOAL) * 100;
+        document.getElementById('progress-bar').style.width = Math.min(p, 100) + "%";
+        document.getElementById('char').style.left = Math.min(p-10, 85) + "%";
+        document.getElementById('perc').innerText = p.toFixed(1);
+        document.getElementById('level-text').innerText = `Level ${Math.floor(state.xp/500)+1} Explorer | ${state.xp} XP`;
+        localStorage.setItem('pulseData', JSON.stringify(state));
+    }
+
+    async function submitDay() {
+        const name = document.getElementById('user-name').value;
+        if(!name) return alert("Please enter your name!");
+        
+        const hero = prompt("Hero of the Day: Who helped you out today?");
+        const story = prompt("The Story: What did they do? (Keep it meaningful!)");
+        
+        const data = {
+            name: name,
+            widgets: state.widgets,
+            heavy: state.heavy,
+            admin: state.earned - (state.widgets*3.75) - (state.heavy*16),
+            percent: (state.earned / GOAL * 100).toFixed(1),
+            hero: hero,
+            story: story
+        };
+
+        // --- REPLACE THE URL BELOW ---
+        const scriptURL = "https://script.google.com/macros/s/AKfycbxdFhZjuzwIF3P85kLdp_eTzIFJlWAAR4E5K9mW6pZtl4Ki-J_qQueRexfSsqyWmRDh/exec";
+
+        try {
+            await fetch(scriptURL, { method: 'POST', body: JSON.stringify(data) });
+            alert("Success! Your stats and story were sent to the Leaderboard.");
+            localStorage.removeItem('pulseData');
+            location.reload();
+        } catch (e) {
+            alert("Error sending to Leaderboard. Let your manager know!");
+        }
+    }
+
+    // Holiday Theme Logic
+    const d = new Date();
+    const md = `${d.getMonth()+1}-${d.getDate()}`;
+    const char = document.getElementById('char');
+    if(md === "3-17") { document.body.classList.add('st-patty'); char.innerText = "🍀🐕"; }
+    else if(md === "3-7") { char.innerText = "🐨"; } // Today's character
+    
+    update();
+</script>
+</body>
+</html>
